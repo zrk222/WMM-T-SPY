@@ -23,6 +23,9 @@ export default async function Dashboard() {
     (await (await services()).find({ _id: { $in: sloRows.map((s) => s.serviceId) } }).toArray()).map((s) => [s._id.toHexString(), s.name]),
   );
   const limits = limitsFor(user.plan);
+  const myServices = await (await services()).find(scope(user) as never).toArray();
+  const WEEK = 7 * 86_400_000;
+  const oncallNow = myServices.filter((s) => (s.oncall?.length ?? 0) > 0 && s.oncall[Math.floor(Date.now() / WEEK) % s.oncall.length].equals(user._id)).length;
   const budgets = await Promise.all(sloRows.map((s) => errorBudget(s.serviceId, s.target, s.windowDays)));
   const bySev = (await (await incidents()).find(scope(user, { state: { $ne: "resolved" } }) as never).toArray()).reduce<Record<string, number>>((acc, i) => {
     acc[i.severity] = (acc[i.severity] ?? 0) + 1;
@@ -78,6 +81,10 @@ export default async function Dashboard() {
         <div className="panel stat">
           <div className="k">Budget exhausted</div>
           <div className="v">{budgets.filter((b) => b.state === "exhausted").length}</div>
+        </div>
+        <div className="panel stat">
+          <div className="k">You are on call</div>
+          <div className="v">{oncallNow}</div>
         </div>
         <div className="panel stat">
           <div className="k">Exports</div>

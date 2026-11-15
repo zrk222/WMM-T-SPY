@@ -2,6 +2,7 @@
 import { ObjectId } from "mongodb";
 import { incidentEvents, incidents, services } from "@/lib/collections";
 import { gate, quota } from "@/lib/guard";
+import { deliverAlert } from "@/lib/alerts";
 import { scope } from "@/lib/scope";
 import { applyCursor, decodeCursor, encodeCursor } from "@/lib/cursor";
 import { fail, json, pageParams, parseBody } from "@/lib/http";
@@ -102,6 +103,7 @@ export async function POST(req: Request) {
     ackAt: null,
     resolvedAt: null,
     resolutionNote: null,
+    postmortem: null,
     createdAt: now,
     updatedAt: now,
   };
@@ -114,6 +116,7 @@ export async function POST(req: Request) {
     note: null,
     at: now,
   });
+  void deliverAlert(doc, g.ctx.user._id);
   await recordAudit({ actor: g.ctx.user._id.toHexString(), action: "incident.open", entity: "incident", entityId: doc._id.toHexString(), after: doc });
   return json({ id: doc._id.toHexString() }, 201);
 }

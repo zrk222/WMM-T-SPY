@@ -1,6 +1,6 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 import { ObjectId } from "mongodb";
-import { alertRules, incidents, services } from "@/lib/collections";
+import { alertDeliveries, alertRules, incidents, services } from "@/lib/collections";
 import { gate } from "@/lib/guard";
 import { fail, json, parseBody } from "@/lib/http";
 import { scope } from "@/lib/scope";
@@ -9,6 +9,7 @@ const schema = z.object({
   name: z.string().trim().min(2).max(80),
   serviceId: z.string().nullable().optional(),
   severityMin: z.enum(["sev1", "sev2", "sev3", "sev4"]).default("sev2"),
+  webhookUrl: z.string().url().max(500).nullish(),
 });
 
 export const dynamic = "force-dynamic";
@@ -19,9 +20,10 @@ export async function GET(req: Request) {
   const g = await gate(req, ["admin", "operator", "viewer"]);
   if (!g.ok) return g.response;
   const owned = scope(g.ctx.user);
-  const [rules, open] = await Promise.all([
+  const [rules, open, deliveries] = await Promise.all([
     (await alertRules()).find(owned as never).sort({ createdAt: -1 }).toArray(),
     (await incidents()).find({ ...owned, state: { $ne: "resolved" } } as never).toArray(),
+    (await alertDeliveries()).find(owned as never).sort({ at: -1 }).limit(10).toArray(),
   ]);
   const svc = new Map((await (await services()).find(owned as never).toArray()).map((s) => [s._id.toHexString(), s.name]));
 
@@ -34,8 +36,16 @@ export async function GET(req: Request) {
     );
 
   return json({
-    items: rules.map((r) => ({ id: r._id.toHexString(), name: r.name, serviceId: r.serviceId?.toHexString() ?? null, severityMin: r.severityMin, enabled: r.enabled })),
+    items: rules.map((r) => ({
+      id: r._id.toHexString(),
+      name: r.name,
+      serviceId: r.serviceId?.toHexString() ?? null,
+      severityMin: r.severityMin,
+      webhookUrl: r.webhookUrl,
+      enabled: r.enabled,
+    })),
     matches,
+    deliveries: deliveries.map((d) => ({ id: d._id.toHexString(), url: d.url, status: d.status, error: d.error, at: d.at })),
   });
 }
 
@@ -50,7 +60,16 @@ export async function POST(req: Request) {
     if (!ObjectId.isValid(parsed.data.serviceId)) return fail("Unknown serviceId", 400);
     serviceId = new ObjectId(parsed.data.serviceId);
   }
-  const doc = { _id: new ObjectId(), ownerId: g.ctx.user._id, name: parsed.data.name, serviceId, severityMin: parsed.data.severityMin ?? "sev2", enabled: true, createdAt: new Date() };
+  const doc = {
+    _id: new ObjectId(),
+    ownerId: g.ctx.user._id,
+    name: parsed.data.name,
+    serviceId,
+    severityMin: parsed.data.severityMin ?? "sev2",
+    webhookUrl: parsed.data.webhookUrl ?? null,
+    enabled: true,
+    createdAt: new Date(),
+  };
   await (await alertRules()).insertOne(doc);
   return json({ id: doc._id.toHexString() }, 201);
 }

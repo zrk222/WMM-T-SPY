@@ -9,9 +9,11 @@ type Dep = { id: string; name: string };
 export function ServiceActions({
   service,
   options,
+  userOptions,
 }: {
-  service: { id: string; name: string; owner: string; description: string; tier: number; dependencies: Dep[] };
+  service: { id: string; name: string; owner: string; description: string; tier: number; dependencies: Dep[]; oncall: string[] };
   options: Dep[];
+  userOptions: Dep[];
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -20,6 +22,7 @@ export function ServiceActions({
   const [description, setDescription] = useState(service.description);
   const [tier, setTier] = useState(String(service.tier));
   const [deps, setDeps] = useState<string[]>(service.dependencies.map((d) => d.id));
+  const [oncall, setOncall] = useState<string[]>(service.oncall);
   const [error, setError] = useState<string | null>(null);
 
   if (!open) {
@@ -51,7 +54,7 @@ export function ServiceActions({
         e.preventDefault();
         const res = await api<{ error?: string }>(`/api/services/${service.id}`, {
           method: "PATCH",
-          body: { name, owner, description, tier: Number(tier), dependencies: deps },
+          body: { name, owner, description, tier: Number(tier), dependencies: deps, oncall },
         });
         if (!res.ok) return setError(res.data?.error ?? "Failed");
         setOpen(false);
@@ -95,6 +98,16 @@ export function ServiceActions({
           </select>
         </div>
       )}
+      <div className="field">
+        <label>On-call rotation (weekly, in order)</label>
+        <select multiple value={oncall} onChange={(e) => setOncall([...e.target.selectedOptions].map((o) => o.value))} style={{ minHeight: 90 }}>
+          {userOptions.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name}
+            </option>
+          ))}
+        </select>
+      </div>
       {error && <p className="err">{error}</p>}
       <div className="row">
         <button type="submit">Save</button>

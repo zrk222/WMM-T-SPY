@@ -31,8 +31,28 @@ export interface ServiceDoc {
   tier: 1 | 2 | 3;
   tags: string[];
   dependencies: ObjectId[];
+  oncall: ObjectId[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface Postmortem {
+  summary: string;
+  rootCause: string;
+  actions: string[];
+  author: string;
+  at: Date;
+}
+
+export interface AlertDeliveryDoc {
+  _id: ObjectId;
+  ownerId: ObjectId;
+  ruleId: ObjectId;
+  incidentId: ObjectId;
+  url: string;
+  status: number | null;
+  error: string | null;
+  at: Date;
 }
 
 export interface AlertRuleDoc {
@@ -41,6 +61,7 @@ export interface AlertRuleDoc {
   name: string;
   serviceId: ObjectId | null;
   severityMin: Severity;
+  webhookUrl: string | null;
   enabled: boolean;
   createdAt: Date;
 }
@@ -59,6 +80,7 @@ export interface IncidentDoc {
   ackAt: Date | null;
   resolvedAt: Date | null;
   resolutionNote: string | null;
+  postmortem: Postmortem | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -154,3 +176,4 @@ export const apiKeys = () => col<ApiKeyDoc>("api_keys");
 export const audit = () => col<AuditDoc>("audit");
 export const runbookRuns = () => col<RunbookRunDoc>("runbook_runs");
 export const alertRules = () => col<AlertRuleDoc>("alert_rules");
+export const alertDeliveries = () => col<AlertDeliveryDoc>("alert_deliveries");

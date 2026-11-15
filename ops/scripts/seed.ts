@@ -36,10 +36,10 @@ async function main() {
   );
 
   const services = [
-    { _id: new ObjectId(), ownerId: admin._id, name: "checkout-api", description: "Payment authorization and capture", owner: "payments", tier: 1 as const, tags: ["prod", "money"], dependencies: [], createdAt: now, updatedAt: now },
-    { _id: new ObjectId(), ownerId: admin._id, name: "edge-router", description: "Public ingress and routing", owner: "platform", tier: 1 as const, tags: ["prod", "edge"], dependencies: [], createdAt: now, updatedAt: now },
-    { _id: new ObjectId(), ownerId: admin._id, name: "search-indexer", description: "Catalog indexing pipeline", owner: "discovery", tier: 2 as const, tags: ["batch"], dependencies: [], createdAt: now, updatedAt: now },
-    { _id: new ObjectId(), ownerId: admin._id, name: "notify-worker", description: "Email and push fan-out", owner: "growth", tier: 3 as const, tags: ["internal"], dependencies: [], createdAt: now, updatedAt: now },
+    { _id: new ObjectId(), ownerId: admin._id, name: "checkout-api", description: "Payment authorization and capture", owner: "payments", tier: 1 as const, tags: ["prod", "money"], dependencies: [], oncall: [], createdAt: now, updatedAt: now },
+    { _id: new ObjectId(), ownerId: admin._id, name: "edge-router", description: "Public ingress and routing", owner: "platform", tier: 1 as const, tags: ["prod", "edge"], dependencies: [], oncall: [], createdAt: now, updatedAt: now },
+    { _id: new ObjectId(), ownerId: admin._id, name: "search-indexer", description: "Catalog indexing pipeline", owner: "discovery", tier: 2 as const, tags: ["batch"], dependencies: [], oncall: [], createdAt: now, updatedAt: now },
+    { _id: new ObjectId(), ownerId: admin._id, name: "notify-worker", description: "Email and push fan-out", owner: "growth", tier: 3 as const, tags: ["internal"], dependencies: [], oncall: [], createdAt: now, updatedAt: now },
   ];
   await db.collection("services").insertMany(services);
   services[0].dependencies = [services[1]._id] as never;

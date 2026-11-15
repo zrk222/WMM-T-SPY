@@ -5,6 +5,7 @@ import { limitsFor, within } from "@/lib/plans";
 import { rateLimit } from "@/lib/rate-limit";
 import { recordAudit } from "@/lib/audit";
 import { errorBudget } from "@/lib/slo";
+import { deliverAlert } from "@/lib/alerts";
 
 export const dynamic = "force-dynamic";
 
@@ -124,11 +125,13 @@ async function callTool(name: string, args: Record<string, unknown>, key: KeyAut
         ackAt: null,
         resolvedAt: null,
         resolutionNote: null,
+        postmortem: null,
         createdAt: now,
         updatedAt: now,
       };
       await (await incidents()).insertOne(doc);
       await (await incidentEvents()).insertOne({ _id: new ObjectId(), incidentId: doc._id, kind: "opened", actor: `${key.user.email} (mcp)`, note: null, at: now });
+      void deliverAlert(doc, key.user._id);
       await recordAudit({ actor: key.user._id.toHexString(), action: "mcp.incident.open", entity: "incident", entityId: doc._id.toHexString() });
       return { id: doc._id.toHexString() };
     }
