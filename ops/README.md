@@ -50,7 +50,7 @@ Tests boot `next dev` on port 3100 against `cloudops_test`, then tear both down.
 - **Agent surface**: `POST /api/mcp` JSON-RPC, API-key Bearer only (session
   cookies rejected), scopes `ops:read` / `ops:write`, max 5 keys, SHA-256 at
   rest, show-once, revocable; `/.well-known/oauth-protected-resource`.
-- **Admin** console (server-enforced role): plans, roles, suspend/restore (with last-admin guard), audit trail.
+- **Admin** console (server-enforced role): plans, roles, suspend/restore (with last-admin guard), audit trail.\n- **Dependencies & impact**: service dependency edges shown both ways, per-service MTTR, dependency picker.\n- **Alerts**: in-app rules by severity/service, live firing list, viewer read-only.\n- **Reporting**: public `/status`, incident search, CSV export, Prometheus `/api/metrics?format=prom`.
 - **Ops**: `/api/health`, structured audit of every mutation, CSP and hardening
   headers, 429 limiter with `retry-after`.
 
@@ -83,4 +83,4 @@ Tools: `list_services`, `list_incidents`, `get_incident`, `create_incident`
 - Suspend/ban flags exist in the model but have no UI.
 - No log ingestion; SLOs store targets only, no error-budget computation.
 
-See `docs/PLAN.md` for phases and `docs/ADR.md` for decisions.
+See `docs/PLAN.md` for phases, `docs/ADR.md` for decisions and `docs/OPS.md` for the app runbook/backups.

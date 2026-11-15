@@ -12,6 +12,7 @@ const patchSchema = z.object({
   owner: z.string().trim().max(120).optional(),
   tier: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
   tags: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
+  dependencies: z.array(z.string()).max(20).optional(),
 });
 
 async function detail(id: string, user: import("@/lib/collections").UserDoc) {
@@ -31,6 +32,7 @@ async function detail(id: string, user: import("@/lib/collections").UserDoc) {
     owner: svc.owner,
     tier: svc.tier,
     tags: svc.tags,
+    dependencies: (svc.dependencies ?? []).map((d) => d.toHexString()),
     createdAt: svc.createdAt,
     openIncidents,
     slo: slo ? { target: slo.target, windowDays: slo.windowDays, indicator: slo.indicator } : null,
@@ -57,7 +59,9 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 
   const parsed = await parseBody(req, patchSchema);
   if (!parsed.ok) return parsed.response;
-  await (await services()).updateOne({ _id: oid }, { $set: { ...parsed.data, updatedAt: new Date() } });
+  const set: Record<string, unknown> = { ...parsed.data, updatedAt: new Date() };
+  if (parsed.data.dependencies) set.dependencies = parsed.data.dependencies.filter((x) => ObjectId.isValid(x)).map((x) => new ObjectId(x));
+  await (await services()).updateOne({ _id: oid }, { $set: set });
   await recordAudit({ actor: g.ctx.user._id.toHexString(), action: "service.update", entity: "service", entityId: id, before, after: parsed.data });
   return json({ success: true });
 }
