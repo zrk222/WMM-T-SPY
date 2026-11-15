@@ -49,3 +49,7 @@ button:disabled { opacity: 0.55; cursor: default; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
 pre { background: #0a1017; border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow: auto; }
 footer.foot { border-top: 1px solid var(--line); margin-top: 40px; padding: 18px 20px; color: var(--muted); font-size: 13px; }
+.pill.ok { color: var(--ok); border-color: #1e3a25; }
+.pill.warning { color: var(--warn); border-color: #4a3a15; }
+.pill.exhausted { color: var(--bad); border-color: #5a2320; }
+

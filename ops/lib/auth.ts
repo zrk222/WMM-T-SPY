@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+﻿import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { ObjectId } from "mongodb";
@@ -65,6 +65,7 @@ export async function currentUser(): Promise<UserDoc | null> {
     if (!payload.sub || !ObjectId.isValid(payload.sub)) return null;
     const user = await (await users()).findOne({ _id: new ObjectId(payload.sub) });
     if (!user) return null;
+    if (user.bannedAt) return null;
     if ((payload.tv as number | undefined) !== user.tv) return null;
     return user;
   } catch {
@@ -102,6 +103,7 @@ export function publicUser(u: UserDoc) {
     name: u.name,
     role: u.role,
     plan: u.plan,
+    banned: Boolean(u.bannedAt),
     createdAt: u.createdAt,
   };
 }

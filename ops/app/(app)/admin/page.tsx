@@ -1,6 +1,7 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { AdminRow } from "./admin-row";
 
 export const dynamic = "force-dynamic";
 
@@ -24,17 +25,15 @@ export default async function Admin() {
             <th>Email</th>
             <th>Role</th>
             <th>Plan</th>
-            <th>Created</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {users.map((u) => (
-            <tr key={String(u._id)}>
-              <td>{String(u.email)}</td>
-              <td>{String(u.role)}</td>
-              <td>{String(u.plan)}</td>
-              <td className="muted">{new Date(u.createdAt as Date).toISOString().slice(0, 10)}</td>
-            </tr>
+            <AdminRow
+              key={String(u._id)}
+              user={{ id: String(u._id), email: String(u.email), role: String(u.role), plan: String(u.plan), banned: Boolean(u.bannedAt) }}
+            />
           ))}
         </tbody>
       </table>

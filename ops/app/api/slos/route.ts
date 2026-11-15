@@ -4,6 +4,7 @@ import { services, slos } from "@/lib/collections";
 import { gate, quota } from "@/lib/guard";
 import { scope } from "@/lib/scope";
 import { fail, json, parseBody } from "@/lib/http";
+import { errorBudget } from "@/lib/slo";
 
 const schema = z.object({
   serviceId: z.string().min(1),
@@ -20,14 +21,16 @@ export async function GET(req: Request) {
   const rows = await (await slos()).find(scope(g.ctx.user) as never).toArray();
   const svc = await (await services()).find({ _id: { $in: rows.map((r) => r.serviceId) } }).toArray();
   const names = new Map(svc.map((s) => [s._id.toHexString(), s.name]));
+  const budgets = await Promise.all(rows.map((s) => errorBudget(s.serviceId, s.target, s.windowDays)));
   return json({
-    items: rows.map((s) => ({
+    items: rows.map((s, i) => ({
       id: s._id.toHexString(),
       serviceId: s.serviceId.toHexString(),
       serviceName: names.get(s.serviceId.toHexString()) ?? "unknown",
       target: s.target,
       windowDays: s.windowDays,
       indicator: s.indicator,
+      budget: budgets[i],
     })),
   });
 }

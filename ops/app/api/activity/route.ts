@@ -16,13 +16,14 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const { cursor, pageSize } = pageParams(url, 100);
   const cur = decodeCursor(cursor);
-  const filter: Record<string, unknown> = scope(g.ctx.user);
-  if (cur) filter.at = { $lt: new Date(cur.c) };
+  const owned = scope(g.ctx.user);
+const actorFilter: Record<string, unknown> = g.ctx.user.role === "admin" ? {} : { actorId: g.ctx.user._id };
+  if (cur) { owned.at = { $lt: new Date(cur.c) }; actorFilter.at = { $lt: new Date(cur.c) }; }
 
   const [inc, aud, svc] = await Promise.all([
-    (await incidents()).find(filter as never).sort({ at: -1, _id: -1 }).limit(pageSize).toArray(),
-    (await audit()).find(filter as never).sort({ at: -1, _id: -1 }).limit(pageSize).toArray(),
-    (await services()).find(filter as never).sort({ createdAt: -1, _id: -1 }).limit(pageSize).toArray(),
+    (await incidents()).find(owned as never).sort({ at: -1, _id: -1 }).limit(pageSize).toArray(),
+    (await audit()).find(actorFilter as never).sort({ at: -1, _id: -1 }).limit(pageSize).toArray(),
+    (await services()).find(owned as never).sort({ createdAt: -1, _id: -1 }).limit(pageSize).toArray(),
   ]);
 
   const names = new Map(svc.map((s) => [s._id.toHexString(), s.name]));

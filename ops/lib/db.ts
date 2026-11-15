@@ -34,6 +34,9 @@ async function ensureIndexes(db: Db) {
     db.collection("api_keys").createIndex({ keyHash: 1 }, { unique: true }),
     db.collection("api_keys").createIndex({ userId: 1, revokedAt: 1 }),
     db.collection("audit").createIndex({ at: -1 }),
+    db.collection("audit").createIndex({ actorId: 1, at: -1 }),
+    db.collection("runbook_runs").createIndex({ runbookId: 1, at: -1 }),
+    db.collection("runbook_runs").createIndex({ ownerId: 1, at: -1 }),
     db.collection("rate_buckets").createIndex({ key: 1 }, { unique: true }),
   ]);
 }

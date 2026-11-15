@@ -3,6 +3,8 @@ import { currentUser } from "@/lib/auth";
 import { audit, deploys, incidents, services, slos } from "@/lib/collections";
 import { limitsFor } from "@/lib/plans";
 import { scope } from "@/lib/scope";
+import { errorBudget } from "@/lib/slo";
+import { BudgetBar } from "@/app/(app)/services/[id]/budget";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +23,7 @@ export default async function Dashboard() {
     (await (await services()).find({ _id: { $in: sloRows.map((s) => s.serviceId) } }).toArray()).map((s) => [s._id.toHexString(), s.name]),
   );
   const limits = limitsFor(user.plan);
+  const budgets = await Promise.all(sloRows.map((s) => errorBudget(s.serviceId, s.target, s.windowDays)));
 
   return (
     <>
@@ -89,10 +92,14 @@ export default async function Dashboard() {
           <h2>SLOs</h2>
           <div className="panel">
             {sloRows.length === 0 && <p className="muted">No SLOs yet.</p>}
-            {sloRows.map((s) => (
-              <p key={s._id.toHexString()}>
-                {svcNames.get(s.serviceId.toHexString()) ?? "unknown"} â€” {s.target}% / {s.windowDays}d ({s.indicator})
-              </p>
+            {sloRows.map((s, i) => (
+              <div key={s._id.toHexString()} style={{ marginBottom: 14 }}>
+                <Link href={`/services/${s.serviceId.toHexString()}`}>{svcNames.get(s.serviceId.toHexString()) ?? "unknown"}</Link>{" "}
+                <span className="muted">
+                  {s.target}% / {s.windowDays}d
+                </span>
+                <BudgetBar budget={budgets[i]} />
+              </div>
             ))}
           </div>
         </div>

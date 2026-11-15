@@ -183,6 +183,13 @@ export async function POST(req: Request) {
     const params = (body.params ?? {}) as { name?: string; arguments?: Record<string, unknown> };
     try {
       const result = await callTool(String(params.name), params.arguments ?? {}, key);
+      await recordAudit({
+        actor: key.user._id.toHexString(),
+        action: `mcp.tool.${String(params.name)}`,
+        entity: "mcp",
+        entityId: key.keyId,
+        after: params.arguments ?? {},
+      });
       return Response.json(rpcOk(body.id, { content: [{ type: "text", text: JSON.stringify(result) }], structuredContent: { result } }));
     } catch (e) {
       return Response.json(rpcErr(body.id, -32602, e instanceof Error ? e.message : "Tool failed"));
@@ -190,6 +197,18 @@ export async function POST(req: Request) {
   }
 
   return Response.json(rpcErr(body.id, -32601, `Unknown method ${body.method}`));
+}
+
+export function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      allow: "GET, POST, OPTIONS",
+      "access-control-allow-origin": "*",
+      "access-control-allow-headers": "authorization, content-type, mcp-protocol-version",
+      "access-control-allow-methods": "POST, GET, OPTIONS",
+    },
+  });
 }
 
 export function GET() {
