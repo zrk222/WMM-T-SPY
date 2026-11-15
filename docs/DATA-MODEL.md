@@ -66,18 +66,41 @@ Client analytics additionally read `created_at` (snake_case) and map
 }
 ```
 
-Draft lifecycle (from client + status enum):
+Draft lifecycle (observed server states):
 
 ```
-status: "analyzing" → "partial" → "complete"
-profile: {
-  id | _id,
-  productProfile:  { …pass-a product_profile },
-  audienceProfile: { …pass-a audience_profile },
-  preferences: { preferredFormats: string[], preferredIndustries: string[] },
-  scrapeData
+status: "scraping" → "analyzing" → "partial" → "complete"
+```
+
+List visibility: `GET /api/app-profile?all=1` returns `profiles: []` until the
+draft is `complete`; partial drafts are not listed. `POST` also answers `409`
+when `appProfilesCount` is exhausted (free limit is 1).
+
+Profile row fields:
+
+```jsonc
+{
+  "id": "6af94ea5787a1bf04d2a3518",
+  "userId": "6af9265776db035dc160e682",
+  "sessionId": "bb8d2396-a75e-48c8-9ba7-dd96cb269c07",
+  "url": "https://apps.apple.com/us/app/duolingo/id570060128",
+  "urlHash": "8b7620b2c1df6dc2",          // 16 hex
+  "isDefault": true,
+  "status": "complete",
+  "preferences": {"preferredFormats":["silent_ugc"],"preferredIndustries":["education","games"]},
+  "passBMeta": {"attempts": 0},
+  "digestMeta": {"angleClickCounts":{},"angleClicks":0,"sentPostIds":[]},
+  "starterQueries": [],
+  "scrapeData": {success,url,type,meta{title,description,ogImage,ogSiteName,ogType,favicon},
+                 appData{name,icon,developer,category,rating,price,description}},
+  "productProfile": {…12 fields},
+  "audienceProfile": {…9 fields},
+  "createdAt": "…", "updatedAt": "…"
 }
 ```
+
+`PATCH /api/app-profile {sessionId}` finalizes and returns
+`{"success":true,"user":{…}}`.
 
 ### product_profile (streamed schema)
 

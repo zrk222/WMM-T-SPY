@@ -36,7 +36,7 @@ Observed via live traffic + literal `fetch()` strings in shipped chunks.
 | POST | `/api/app-profile` [str] | `... , preferences, status:"complete"\|"partial"` | final save; response carries `profile.id` |
 | PATCH | `/api/app-profile` [str] | `{sessionId}` | finalize; retried once after `refreshUser()` on 401 |
 | GET | `/api/app-profile?all=1[&with=connectOffer]` [obs] | — | `{"profiles":[],"defaultId":null,"limit":1,"connectOffer":{"show":false,"target":"add","inProgress":false}}` |
-| POST | `/api/onboarding/build-profile/scrape` [str] | `{url}` | → `{url, scrapeToken, appData, meta}` |
+| POST | `/api/onboarding/build-profile/scrape` [str] | `{url}` | → `{url, scrapeToken, appData, meta}`; token form `s1.<base64url JSON>` |
 | POST | `/api/onboarding/build-profile/pass-a` [str] | `{url, scrapeToken}` or `{url:"noapp:<12-char-uuid>", description}` | consumed via `useObject` (Vercel AI SDK) streaming `{product_profile, audience_profile}` |
 | PATCH | `/api/user/profile-completion` [str] | `{onboardingComplete:true}` | |
 
@@ -46,7 +46,7 @@ Observed via live traffic + literal `fetch()` strings in shipped chunks.
 | --- | --- | --- |
 | GET | `/api/frontend/home` [obs] | `{"formatPreviews":{face_to_camera,screen_recording,animation_motion_graphics,text_centric,slideshow,other,silent_ugc},"industryPreviews":{games,finance,health_fitness,education,entertainment,lifestyle,shopping_e_commerce,business,other_uncategorized}}` — all values are S3 image URLs |
 | GET | `/api/frontend/posts` [obs] | see query string below; returns `{"posts":[…],"nextCursor":"…","totalCount":…}` |
-| GET | `/api/frontend/feed` [obs] | requires `?profileId=`; missing → `400 {"error":"profileId is required"}` |
+| GET | `/api/frontend/feed` [obs] | requires `?profileId=`; missing → `400 {"error":"profileId is required"}`. 20 posts; adds `description`, `predictions`, `yourVersion` per post and top-level `fallback` |
 | GET | `/api/frontend/last-update` [str] | |
 | GET | `/api/apps/movers` [str] | App Pulse data |
 | GET | `/api/apps/movers/creators` [str] | |

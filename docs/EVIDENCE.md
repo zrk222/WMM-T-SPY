@@ -82,6 +82,19 @@ facts that need no browser; those are not REA Evidence records and are marked
 `Set-Cookie: token=eyJ…` with full flag set, `POST /api/auth/logout` 200 then
 `/api/auth/me` 401.
 
+## Third-pass evidence
+
+| # | Operation | Evidence ID / artifact | What it proves |
+| --- | --- | --- | --- |
+| 16 | `capture_browser_scenario` (onboarding run, authenticated) | `ev_f4ed6c63bd78b5e4993ea2e94054911f6a544bb6054d3699492a81c76ad5f5cb` | scrape token format, scrape/appData schema, status `scraping → analyzing → partial`, full pass-A output |
+| 17 | `capture_browser_scenario` (finalize + patch + list) | `ev_7f1c11a7668e92b5390814d97cfa75c15fadf9b56ddf454c583b5d5d6461cb2b` | `status:complete`, list becomes visible, `PATCH` returns `{success,user}` |
+| 18 | `capture_browser_scenario` (explore/connect/key with profile) | `ev_71daaf347f251f8075bac781755de468abed23a2b89f707d15ae9400c14d1495` | key POST still `403`, keys stay `[]`, feed query shape |
+| 19 | headed launch, key POST | `tool_1ddddf5a…` | gate survives non-headless |
+
+Raw probes: `GET /api/frontend/feed?profileId=…` → 200 with `description`,
+`predictions`, `yourVersion`, `fallback`; six RFC-7591 DCR bodies → 400;
+`GET /api/user/api-keys` → `{"keys":[]}`.
+
 ## Redactions and known gaps
 
 - `set-cookie` values are **redacted** by the capture policy; the session cookie

@@ -1,7 +1,7 @@
-# WMM T-SPY
+﻿# WMM T-SPY
 
-Black-box reverse engineering of **https://spytok.com** — a commercial TikTok
-"virality" analytics SaaS — performed with [REA](https://github.com/morluto/rea)
+Black-box reverse engineering of **https://spytok.com** â€” a commercial TikTok
+"virality" analytics SaaS â€” performed with [REA](https://github.com/morluto/rea)
 (Chrome DevTools protocol capture, passive page inspection, static JavaScript
 bundle analysis, and controlled browser replay).
 
@@ -26,7 +26,7 @@ was taken from source code, and nothing was modified on the live service.
 | Auth (web) | HS256 **JWT in an HttpOnly cookie** `token` (7 d, `Secure`, `SameSite=lax`), claims include `role`/tier/`tv`; plus Google Identity Services. Login lockout + attempt tracking; logout revokes immediately. |
 | Auth (agent) | MCP accepts **only** an API key (`Authorization: Bearer`), max 5, shown once; session JWT is rejected. |
 | Billing | Stripe. Public plan catalogue + **anonymous guest checkout** (`cs_live_` sessions). |
-| Tiers | Starter `basic` $49/mo · $299/yr; Growth `pro` $59/mo · $399/yr; Scale `enterprise` $899/mo · $5 990/yr; legacy `ultra` enum unused. States `active`, `trialing`, `past_due`, `unpaid`. |
+| Tiers | Starter `basic` $49/mo Â· $299/yr; Growth `pro` $59/mo Â· $399/yr; Scale `enterprise` $899/mo Â· $5 990/yr; legacy `ultra` enum unused. States `active`, `trialing`, `past_due`, `unpaid`. |
 | Media | Public S3 bucket `social-gen` (`images/`, `slides/`, `videos/`). |
 | Analytics | PostHog (cloud US), Vercel Analytics + Speed Insights, Crisp chat, Simple Analytics (broken: blocked by CSP). |
 | AI feature | Onboarding profile builder streams structured `product_profile` + `audience_profile` JSON from `/api/onboarding/build-profile/pass-a`; "adaptation briefs" are metered by `aiCredits`. |
@@ -47,6 +47,7 @@ docs/THIRD-PARTY.md           analytics, billing, chat, media, fonts, CDN
 docs/SECURITY.md              auth model, limits, headers, findings and weaknesses
 docs/EVIDENCE.md              evidence IDs, digests, captured assets, limitations
 docs/SECOND-PASS.md           second sweep: new surface, corrections, gaps
+docs/THIRD-PASS.md            profile lifecycle, feed schema, DCR closure, gate scoping
 docs/REPRODUCE.md             exact REA call sequence used to reproduce this
 LICENSE                       Apache License 2.0
 ```
@@ -57,8 +58,8 @@ LICENSE                       Apache License 2.0
 
 Public marketing and SEO:
 
-- `/` — landing page (hero, social proof, 3-step explainer, FAQ, CTA)
-- `/top-posts` — category index (8 industries + 10 formats), prerendered
+- `/` â€” landing page (hero, social proof, 3-step explainer, FAQ, CTA)
+- `/top-posts` â€” category index (8 industries + 10 formats), prerendered
 - `/top-posts/{lifestyle|education|health-fitness|entertainment|business|finance|gaming|ecommerce}`
 - `/top-posts/{tutorial|app-demo|problem-solution|educational|entertainment|testimonials|storytime|before-after|meme|listicle}`
 - `/top-posts/rankings/{by-views|by-engagement|this-week|this-month}`
@@ -67,18 +68,18 @@ Public marketing and SEO:
 
 Authenticated application:
 
-- `/login` — Google SSO or email login (modal-driven), `?next=` safe redirects
-- `/onboarding` — 5-step profile builder (guest-capable, signup gate at the end)
-- `/home` — personalized feed shell
-- `/explore` — visual/format exploration (supports `?visualTags=...`)
-- `/apps` — app directory; `/apps/movers` data
-- `/profile` — user profile
-- `/app-profile` — per-app product/audience profile editor
-- `/connect` + `/connect/setup` — MCP connection wizard
-- `/subscription/manage` — Stripe billing portal entry
-- `/feed/{id}` — profile-scoped feed
-- `/admin` — internal admin console (client-side `role === "admin"` gate)
-- `/oauth/authorize` — OAuth 2.0 authorization endpoint for the MCP server
+- `/login` â€” Google SSO or email login (modal-driven), `?next=` safe redirects
+- `/onboarding` â€” 5-step profile builder (guest-capable, signup gate at the end)
+- `/home` â€” personalized feed shell
+- `/explore` â€” visual/format exploration (supports `?visualTags=...`)
+- `/apps` â€” app directory; `/apps/movers` data
+- `/profile` â€” user profile
+- `/app-profile` â€” per-app product/audience profile editor
+- `/connect` + `/connect/setup` â€” MCP connection wizard
+- `/subscription/manage` â€” Stripe billing portal entry
+- `/feed/{id}` â€” profile-scoped feed
+- `/admin` â€” internal admin console (client-side `role === "admin"` gate)
+- `/oauth/authorize` â€” OAuth 2.0 authorization endpoint for the MCP server
 
 ---
 
@@ -96,7 +97,7 @@ Authenticated application:
    `outlier_min`, `outlier_max`, `time_period`, `sort_by`, `content_type`,
    `platform`, `tags`, `tag_filters`, `recent_media_only`,
    `chart_selection_type`, `chart_selection_value`, `hide_ads`,
-   `require_blueprint_tags`, plus `cursor`/`pageSize` pagination — i.e. the
+   `require_blueprint_tags`, plus `cursor`/`pageSize` pagination â€” i.e. the
    product's entire search UI is server-driven by this one endpoint.
 
 4. **AI onboarding streams two schemas.** `/api/onboarding/build-profile/pass-a`
@@ -144,25 +145,30 @@ catalogue is public** with real price ids (14), and **sitemap/category pages
 expose 1000 posts** with captions and S3 video URLs (15). Details, corrections
 to pass 1, and remaining gaps: [docs/SECOND-PASS.md](docs/SECOND-PASS.md).
 
+A third pass then built a profile end-to-end (scraping → analyzing → partial →
+complete), mapped the profile-bound feed schema, and closed two questions: dynamic
+client registration is effectively off, and the key gate survives headed browsers and
+idle time (IP-scoped), so MCP tool schemas stay unknown — [docs/THIRD-PASS.md](docs/THIRD-PASS.md).
+
 ---
 
 ## Architecture in one diagram
 
 ```
-                ┌──────────────────────── Vercel (iad1) ────────────────────────┐
- browser ──────▶│ Next.js App Router (Turbopack)   RSC + client islands         │
- (Chrome)       │   ├── static chunks /_next/static/immutable/chunks/*.js       │
-                │   ├── route handlers  /api/auth/*                             │
-                │   │                   /api/frontend/{home,feed,posts,last-update}
-                │   │                   /api/app-profile, /api/onboarding/*     │
-                │   │                   /api/subscription/*  (Stripe)           │
-                │   │                   /api/user/*, /api/apps/movers          │
-                │   └── MCP endpoint    /api/mcp   + OAuth /oauth/authorize     │
-                └───────┬───────────────┬──────────────────┬───────────────────┘
-                        │               │                  │
+                â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Vercel (iad1) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+ browser â”€â”€â”€â”€â”€â”€â–¶â”‚ Next.js App Router (Turbopack)   RSC + client islands         â”‚
+ (Chrome)       â”‚   â”œâ”€â”€ static chunks /_next/static/immutable/chunks/*.js       â”‚
+                â”‚   â”œâ”€â”€ route handlers  /api/auth/*                             â”‚
+                â”‚   â”‚                   /api/frontend/{home,feed,posts,last-update}
+                â”‚   â”‚                   /api/app-profile, /api/onboarding/*     â”‚
+                â”‚   â”‚                   /api/subscription/*  (Stripe)           â”‚
+                â”‚   â”‚                   /api/user/*, /api/apps/movers          â”‚
+                â”‚   â””â”€â”€ MCP endpoint    /api/mcp   + OAuth /oauth/authorize     â”‚
+                â””â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                        â”‚               â”‚                  â”‚
              MongoDB-style store   Stripe API        PostHog / Crisp / Google
              (ObjectId entities)   (billing)         (analytics, chat, SSO)
-                        │
+                        â”‚
              s3://social-gen (public: images/, slides/, videos/)
 ```
 
@@ -201,4 +207,4 @@ independent analysis and is not affiliated with SpyTok.
 
 ## License
 
-Apache License 2.0 — see [LICENSE](LICENSE).
+Apache License 2.0 â€” see [LICENSE](LICENSE).

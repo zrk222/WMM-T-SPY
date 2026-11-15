@@ -218,3 +218,7 @@ columns drive the nudge sequence.
 3. Accepted dynamic-client-registration body.
 4. Admin surface beyond the redirect.
 5. LLM provider/model behind `pass-a`.
+
+> Pass 3 update: (3) six RFC-complete bodies were rejected, so registration is
+> closed rather than strict; (1)/(2) the gate survived headed Chrome, idle time and
+> a completed profile, so both remain open. See [THIRD-PASS.md](THIRD-PASS.md).

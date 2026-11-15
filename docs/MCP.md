@@ -1,8 +1,8 @@
-# SpyTok as an MCP server
+﻿# SpyTok as an MCP server
 
 SpyTok ships a first-party **Model Context Protocol** server so external agents
 (Claude, Cursor, VS Code, anything MCP-capable) can query its viral-post data.
-This is a product surface, not an internal tool — the app markets it in-product.
+This is a product surface, not an internal tool â€” the app markets it in-product.
 
 ## Endpoint and discovery
 
@@ -11,9 +11,9 @@ MCP transport : https://spytok.com/api/mcp   (HTTP; Allow: DELETE, GET, HEAD, OP
 Connector UI  : /connect  and  /connect/setup   (setup requires an app profile)
 OAuth AS      : /.well-known/oauth-authorization-server
 OAuth resource: /.well-known/oauth-protected-resource  (+ /api/mcp suffix form)
-Authorize     : /oauth/authorize → onboarding when signed out
+Authorize     : /oauth/authorize â†’ onboarding when signed out
 Token         : POST /api/oauth/token          (authorization_code, refresh_token)
-Registration  : POST /api/oauth/register       (dynamic client registration)
+Registration  : POST /api/oauth/register       (dynamic client registration — closed in practice)
 Scopes        : spytok:read (single)
 PKCE          : S256 only; token auth method "none" (public clients)
 ```
@@ -38,8 +38,10 @@ Authorization: Bearer YOUR_KEY
 Key rules: created in the profile "AI tools" panel, **max 5 per account**
 (`5 keys max. disconnect one first.`), displayed once
 (`shows once, copy it now`), described as `for tools without sign in`, and
-revocable. Creation is `POST /api/user/api-keys {name}` and is one of the routes
-that trips the bot gate (see SECURITY.md #12).
+revocable. Creation is `POST /api/user/api-keys {name}` and is the route that
+trips the bot gate (see SECURITY.md #12). The gate survived a headed browser, a
+150 s pause and a completed profile, and `GET /api/user/api-keys` stayed
+`{keys:[]}` — so no key could be minted and `tools/list` stays unknown.
 
 Client-side constant (verbatim from the connect chunk):
 
@@ -58,7 +60,7 @@ Shipped install commands and deep links:
 
 ```
 claude mcp add --transport http --scope user spytok https://spytok.com/api/mcp
-https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=SpyTok&connectorUrl=…
+https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=SpyTok&connectorUrl=â€¦
 https://cursor.com/en-US/install-mcp
 https://vscode.dev/redirect/mcp/install
 ```
@@ -74,7 +76,7 @@ strategist in your AI chat", so ChatGPT is a first-class target as well.
    provisions an API key (`/api/user/api-keys`).
 3. Connections are listed and revocable: `/api/user/mcp-connections`,
    `/api/user/mcp-connections/{id}`.
-4. Free tier can preview MCP (`/api/user/mcp-connect/ask-link` → `{askLink}`)
+4. Free tier can preview MCP (`/api/user/mcp-connect/ask-link` â†’ `{askLink}`)
    but gated features surface the paywall (`/pricing?next=/connect`).
 
 ## In-product MCP funnel
@@ -102,7 +104,7 @@ another app.
 {"access":"free","arm":null,"connected":false,"clickedAt":null,"tool":null,
  "allowViewedAt":null,"deniedAt":null,"claudeAllowViewedAt":null,
  "dismissedAt":null,"connections":[],"keys":[],"lastAnswer":null,
- "firstAnswerAt":null,"inProgress":false,"serverNow":"…"}
+ "firstAnswerAt":null,"inProgress":false,"serverNow":"â€¦"}
 ```
 
 `access` gates the feature, `arm`/`tool` describe the connector, and the
@@ -116,7 +118,7 @@ industries), exposed to agents. Because it is served from the same Next.js app
 and OAuth issuer, the "agent API" inherits the web session model, tier limits
 and revocation semantics (`tokenVersion`, per-connection revoke).
 
-> Scope note: `tools/list` and tool schemas are **unknown** — key creation was
+> Scope note: `tools/list` and tool schemas are **unknown** â€” key creation was
 > blocked by the bot gate on every attempt. The claims above come from the
 > published OAuth documents, live 401 contracts, shipped client code, route names
 > and in-product copy. Transport was exercised only to `initialize` (which never
