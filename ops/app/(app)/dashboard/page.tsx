@@ -24,6 +24,14 @@ export default async function Dashboard() {
   );
   const limits = limitsFor(user.plan);
   const budgets = await Promise.all(sloRows.map((s) => errorBudget(s.serviceId, s.target, s.windowDays)));
+  const bySev = (await (await incidents()).find(scope(user, { state: { $ne: "resolved" } }) as never).toArray()).reduce<Record<string, number>>((acc, i) => {
+    acc[i.severity] = (acc[i.severity] ?? 0) + 1;
+    return acc;
+  }, {});
+  const resolvedRows = await (await incidents()).find({ ...scope(user), state: "resolved", resolvedAt: { $ne: null } } as never).toArray();
+  const mttr = resolvedRows.length
+    ? Math.round((resolvedRows.reduce((s, r) => s + ((r.resolvedAt as Date).getTime() - r.openedAt.getTime()), 0) / resolvedRows.length / 60000) * 10) / 10
+    : 0;
 
   return (
     <>
@@ -53,6 +61,29 @@ export default async function Dashboard() {
           <div className="k">SLOs</div>
           <div className="v">{sloRows.length}</div>
           <div className="muted">tracked</div>
+        </div>
+      </div>
+
+      <div className="grid cols4">
+        <div className="panel stat">
+          <div className="k">MTTR</div>
+          <div className="v">{mttr}m</div>
+        </div>
+        <div className="panel stat">
+          <div className="k">sev1 / sev2</div>
+          <div className="v">
+            {bySev.sev1 ?? 0} / {bySev.sev2 ?? 0}
+          </div>
+        </div>
+        <div className="panel stat">
+          <div className="k">Budget exhausted</div>
+          <div className="v">{budgets.filter((b) => b.state === "exhausted").length}</div>
+        </div>
+        <div className="panel stat">
+          <div className="k">Exports</div>
+          <div className="v" style={{ fontSize: 15 }}>
+            <Link href="/api/incidents?format=csv">incidents.csv</Link>
+          </div>
         </div>
       </div>
 

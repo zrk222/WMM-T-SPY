@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { PLAN_CATALOG } from "@/lib/plans";
 
 export default function Landing() {
@@ -8,6 +8,7 @@ export default function Landing() {
         <span className="brand">CloudOps Console</span>
         <nav>
           <Link href="/pricing">Pricing</Link>
+          <Link href="/status">Status</Link>
           <Link href="/login">Sign in</Link>
         </nav>
         <span className="spacer" />
@@ -16,7 +17,7 @@ export default function Landing() {
       <main>
         <h1>Run production without guesswork.</h1>
         <p className="lead">
-          Services, incidents, deploys, runbooks and SLOs in one console — with an MCP surface so your
+          Services, incidents, deploys, runbooks and SLOs in one console â€” with an MCP surface so your
           agents can read the same state your humans do.
         </p>
         <div className="row">
@@ -33,7 +34,7 @@ export default function Landing() {
           <div className="panel">
             <strong>Incident workflow that matches reality</strong>
             <p className="muted">
-              open → acknowledged → monitoring → resolved, with a full timeline, severity, impact and
+              open â†’ acknowledged â†’ monitoring â†’ resolved, with a full timeline, severity, impact and
               commander. Illegal transitions are rejected with 409.
             </p>
           </div>
@@ -57,14 +58,14 @@ export default function Landing() {
         <div className="grid cols2">
           {PLAN_CATALOG.filter((p) => p.id !== "free").map((p) => (
             <div className="panel" key={p.id}>
-              <strong>{p.name}</strong> — ${p.monthlyUsd}/mo
-              <p className="muted">{p.features.join(" · ")}</p>
+              <strong>{p.name}</strong> â€” ${p.monthlyUsd}/mo
+              <p className="muted">{p.features.join(" Â· ")}</p>
               <Link href="/login">Start</Link>
             </div>
           ))}
         </div>
       </main>
-      <footer className="foot">CloudOps Console — demo build. Data is seeded, plans are enforced server-side.</footer>
+      <footer className="foot">CloudOps Console â€” demo build. Data is seeded, plans are enforced server-side.</footer>
     </>
   );
 }

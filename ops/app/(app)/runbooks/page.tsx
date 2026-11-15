@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { runbooks } from "@/lib/collections";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +8,13 @@ export default async function RunbooksPage() {
   return (
     <>
       <h1>Runbooks</h1>
-      <p className="lead">Ordered steps, executable by a human or an agent.</p>
+      <div className="row">
+        <p className="lead">Ordered steps, executable by a human or an agent.</p>
+        <span className="spacer" />
+        <Link href="/runbooks/new">
+          <button>New runbook</button>
+        </Link>
+      </div>
       <table>
         <thead>
           <tr>
@@ -24,7 +30,7 @@ export default async function RunbooksPage() {
                 <Link href={`/runbooks/${r._id.toHexString()}`}>{r.name}</Link>
               </td>
               <td>{r.steps.length}</td>
-              <td className="muted">{r.serviceId?.toHexString() ?? "—"}</td>
+              <td className="muted">{r.serviceId?.toHexString() ?? "â€”"}</td>
             </tr>
           ))}
           {rows.length === 0 && (
