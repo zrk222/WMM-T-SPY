@@ -14,6 +14,7 @@ const createSchema = z.object({
   tier: z.union([z.literal(1), z.literal(2), z.literal(3)]).default(2),
   tags: z.array(z.string().trim().min(1).max(40)).max(20).default([]),
   dependencies: z.array(z.string()).max(20).default([]),
+  oncall: z.array(z.string()).max(20).default([]),
 });
 
 export const dynamic = "force-dynamic";
@@ -77,6 +78,7 @@ export async function POST(req: Request) {
     tier: parsed.data.tier ?? 2,
     tags: parsed.data.tags ?? [],
     dependencies: (parsed.data.dependencies ?? []).filter((d) => ObjectId.isValid(d)).map((d) => new ObjectId(d)),
+    oncall: (parsed.data.oncall ?? []).filter((d) => ObjectId.isValid(d)).map((d) => new ObjectId(d)),
     createdAt: now,
     updatedAt: now,
   };

@@ -8,6 +8,8 @@ import { SloForm } from "./slo-form";
 import { BudgetBar } from "./budget";
 import { errorBudget } from "@/lib/slo";
 import { scope } from "@/lib/scope";
+import { currentOncallIds, oncallRoster } from "@/lib/oncall";
+import { users } from "@/lib/collections";
 import { DeployForm } from "./deploy-form";
 import { ServiceActions } from "./service-actions";
 import { dependentsOf, dependenciesOf, mttrFor } from "@/lib/graph";
@@ -22,13 +24,16 @@ export default async function ServiceDetail({ params }: { params: Promise<{ id: 
   const svc = await (await services()).findOne({ _id: oid });
   if (!svc) notFound();
 
-  const [open, dep, slo, deps, dependents, mttr] = await Promise.all([
+  const [open, dep, slo, deps, dependents, mttr, roster, current, userRows] = await Promise.all([
     (await incidents()).find({ serviceId: oid }).sort({ openedAt: -1 }).limit(10).toArray(),
     (await deploys()).find({ serviceId: oid }).sort({ at: -1 }).limit(10).toArray(),
     (await slos()).findOne({ serviceId: oid }),
     dependenciesOf(oid),
     dependentsOf(oid),
     mttrFor(oid),
+    oncallRoster(svc.oncall ?? []),
+    currentOncallIds(svc.oncall ?? []),
+    (await users()).find({}).limit(100).toArray(),
   ]);
 
   return (
@@ -44,6 +49,9 @@ export default async function ServiceDetail({ params }: { params: Promise<{ id: 
       <p className="muted mono">
         MTTR {mttr.minutes}m over {mttr.resolved} resolved
       </p>
+      <p className="muted">
+        on call now: {roster.find((r) => current.some((id) => id.toHexString() === r.id))?.name ?? "nobody"} · roster: {roster.map((r) => r.name).join(" → ") || "empty"}
+      </p>
       {(deps.length > 0 || dependents.length > 0) && (
         <div className="panel">
           <strong>Dependencies</strong>
@@ -52,8 +60,9 @@ export default async function ServiceDetail({ params }: { params: Promise<{ id: 
         </div>
       )}
       {user.role !== "viewer" && (
-        <ServiceActions service={{ id, name: svc.name, owner: svc.owner, description: svc.description, tier: svc.tier, dependencies: deps }}
-          options={(await (await services()).find(scope(user) as never).toArray()).filter((x) => !x._id.equals(oid)).map((x) => ({ id: x._id.toHexString(), name: x.name }))} />
+        <ServiceActions service={{ id, name: svc.name, owner: svc.owner, description: svc.description, tier: svc.tier, dependencies: deps, oncall: (svc.oncall ?? []).map(String) }}
+          options={(await (await services()).find(scope(user) as never).toArray()).filter((x) => !x._id.equals(oid)).map((x) => ({ id: x._id.toHexString(), name: x.name }))}
+          userOptions={userRows.map((u) => ({ id: u._id.toHexString(), name: u.name }))} />
       )}
 
       <h2>Incidents</h2>

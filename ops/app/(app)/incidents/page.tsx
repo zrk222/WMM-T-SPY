@@ -4,6 +4,7 @@ import { currentUser } from "@/lib/auth";
 import { scope } from "@/lib/scope";
 import { decodeCursor, encodeCursor } from "@/lib/cursor";
 import { NewIncident } from "./new-incident";
+import { IncidentTable } from "./incident-table";
 
 export const dynamic = "force-dynamic";
 
@@ -89,41 +90,16 @@ export default async function IncidentsPage({
         </Link>
       </form>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Sev</th>
-            <th>State</th>
-            <th>Incident</th>
-            <th>Service</th>
-            <th>Opened</th>
-          </tr>
-        </thead>
-        <tbody>
-          {page.map((i) => (
-            <tr key={i._id.toHexString()}>
-              <td>
-                <span className={`pill ${i.severity}`}>{i.severity}</span>
-              </td>
-              <td>
-                <span className={`pill ${i.state}`}>{i.state}</span>
-              </td>
-              <td>
-                <Link href={`/incidents/${i._id.toHexString()}`}>{i.title}</Link>
-              </td>
-              <td className="muted">{names.get(i.serviceId.toHexString()) ?? "—"}</td>
-              <td className="muted">{i.openedAt.toISOString().slice(0, 16).replace("T", " ")}</td>
-            </tr>
-          ))}
-          {page.length === 0 && (
-            <tr>
-              <td colSpan={5} className="muted">
-                None.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <IncidentTable
+        rows={page.map((i) => ({
+          id: i._id.toHexString(),
+          severity: i.severity,
+          state: i.state,
+          title: i.title,
+          serviceName: names.get(i.serviceId.toHexString()) ?? "—",
+          openedAt: i.openedAt.toISOString().slice(0, 16).replace("T", " "),
+        }))}
+      />
 
       {next && (
         <p style={{ marginTop: 14 }}>

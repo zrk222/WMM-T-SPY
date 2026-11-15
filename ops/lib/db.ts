@@ -38,6 +38,8 @@ async function ensureIndexes(db: Db) {
     db.collection("runbook_runs").createIndex({ runbookId: 1, at: -1 }),
     db.collection("services").createIndex({ dependencies: 1 }),
     db.collection("alert_rules").createIndex({ ownerId: 1, enabled: 1 }),
+    db.collection("alert_deliveries").createIndex({ ownerId: 1, at: -1 }),
+    db.collection("services").createIndex({ oncall: 1 }),
     db.collection("runbook_runs").createIndex({ ownerId: 1, at: -1 }),
     db.collection("rate_buckets").createIndex({ key: 1 }, { unique: true }),
   ]);
