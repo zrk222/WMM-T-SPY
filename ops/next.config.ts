@@ -15,7 +15,7 @@ const csp = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  outputFileTracingRoot: __dirname,
+  outputFileTracingRoot: process.cwd(),
   async headers() {
     return [
       {
