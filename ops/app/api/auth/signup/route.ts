@@ -32,6 +32,7 @@ export async function POST(req: Request) {
     passwordHash: await hashPassword(password),
     role: first ? ("admin" as const) : ("operator" as const),
     plan: first ? ("scale" as const) : ("free" as const),
+    bannedAt: null,
     tv: 0,
     lockedUntil: null,
     failedLogins: 0,

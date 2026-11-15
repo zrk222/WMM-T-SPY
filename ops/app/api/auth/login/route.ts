@@ -19,6 +19,7 @@ export async function POST(req: Request) {
 
   const user = await (await users()).findOne({ email: parsed.data.email });
   if (!user) return fail("Invalid credentials", 401);
+  if (user.bannedAt) return json({ error: "Account suspended", banned: true }, 403);
 
   if (user.lockedUntil && user.lockedUntil > new Date()) {
     const seconds = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 1000);

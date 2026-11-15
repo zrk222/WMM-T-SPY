@@ -14,6 +14,7 @@ export interface UserDoc {
   passwordHash: string;
   role: Role;
   plan: Plan;
+  bannedAt: Date | null;
   tv: number;
   lockedUntil: Date | null;
   failedLogins: number;
@@ -82,6 +83,16 @@ export interface RunbookDoc {
   updatedAt: Date;
 }
 
+export interface RunbookRunDoc {
+  _id: ObjectId;
+  ownerId: ObjectId;
+  runbookId: ObjectId;
+  actorId: ObjectId;
+  status: "ok" | "failed" | "partial";
+  note: string | null;
+  at: Date;
+}
+
 export interface SloDoc {
   _id: ObjectId;
   ownerId: ObjectId;
@@ -107,6 +118,7 @@ export interface ApiKeyDoc {
 export interface AuditDoc {
   _id: ObjectId;
   actor: string;
+  actorId: ObjectId | string | null;
   action: string;
   entity: string;
   entityId: string | null;
@@ -129,3 +141,4 @@ export const runbooks = () => col<RunbookDoc>("runbooks");
 export const slos = () => col<SloDoc>("slos");
 export const apiKeys = () => col<ApiKeyDoc>("api_keys");
 export const audit = () => col<AuditDoc>("audit");
+export const runbookRuns = () => col<RunbookRunDoc>("runbook_runs");

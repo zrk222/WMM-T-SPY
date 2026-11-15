@@ -26,6 +26,7 @@ async function main() {
     [admin, ops, viewer].map((u) => ({
       ...u,
       passwordHash: pw,
+      bannedAt: null,
       tv: 0,
       lockedUntil: null,
       failedLogins: 0,

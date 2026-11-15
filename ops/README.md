@@ -1,4 +1,4 @@
-# CloudOps Console (ops/)
+﻿# CloudOps Console (ops/)
 
 Working cloud-operations console built from the WMM T-SPY blueprint. Spans a
 vertical slice end-to-end: auth, tenancy, incidents, deploys, runbooks, SLOs,
@@ -41,7 +41,7 @@ Tests boot `next dev` on port 3100 against `cloudops_test`, then tear both down.
   lockout with 15-minute window, double-submit CSRF on mutations.
 - **Tenancy**: every row carries `ownerId`; non-admins only see their own rows,
   admins see everything. Caps are evaluated per owner.
-- **Incidents**: open → acknowledged → monitoring → resolved (reopen allowed),
+- **Incidents**: open â†’ acknowledged â†’ monitoring â†’ resolved (reopen allowed),
   immutable timeline, notes, severity/impact/commander, illegal transitions 409.
 - **Deploys** with plan-scoped history window, **runbooks** with ordered steps,
   **SLOs** one per service.
@@ -50,7 +50,7 @@ Tests boot `next dev` on port 3100 against `cloudops_test`, then tear both down.
 - **Agent surface**: `POST /api/mcp` JSON-RPC, API-key Bearer only (session
   cookies rejected), scopes `ops:read` / `ops:write`, max 5 keys, SHA-256 at
   rest, show-once, revocable; `/.well-known/oauth-protected-resource`.
-- **Admin** console (server-enforced role) with users, plans and audit.
+- **Admin** console (server-enforced role): plans, roles, suspend/restore (with last-admin guard), audit trail.
 - **Ops**: `/api/health`, structured audit of every mutation, CSP and hardening
   headers, 429 limiter with `retry-after`.
 
@@ -68,7 +68,7 @@ role/CSRF/entitlement, 404 missing, 409 conflict/limit, `{items, nextCursor}`.
 
 ```bash
 curl -s localhost:3000/api/mcp \
-  -H "authorization: Bearer ck_…" -H 'content-type: application/json' \
+  -H "authorization: Bearer ck_â€¦" -H 'content-type: application/json' \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
 

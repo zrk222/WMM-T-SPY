@@ -1,10 +1,13 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ObjectId } from "mongodb";
 import { currentUser } from "@/lib/auth";
 import { deploys, incidents, services, slos } from "@/lib/collections";
 import { NewIncident } from "@/app/(app)/incidents/new-incident";
 import { SloForm } from "./slo-form";
+import { BudgetBar } from "./budget";
+import { errorBudget } from "@/lib/slo";
+import { DeployForm } from "./deploy-form";
 
 export const dynamic = "force-dynamic";
 
@@ -25,11 +28,11 @@ export default async function ServiceDetail({ params }: { params: Promise<{ id: 
   return (
     <>
       <p className="muted">
-        <Link href="/services">← Services</Link>
+        <Link href="/services">â† Services</Link>
       </p>
       <h1>{svc.name}</h1>
       <p className="lead">
-        tier {svc.tier} · {svc.owner || "no owner"} · {svc.tags.join(", ") || "no tags"}
+        tier {svc.tier} Â· {svc.owner || "no owner"} Â· {svc.tags.join(", ") || "no tags"}
       </p>
       {svc.description && <p>{svc.description}</p>}
 
@@ -75,10 +78,11 @@ export default async function ServiceDetail({ params }: { params: Promise<{ id: 
         <div>
           <h2>SLO</h2>
           {slo ? (
-            <div className="panel">
-              <p>
+            <div>
+              <p className="muted">
                 {slo.target}% over {slo.windowDays}d ({slo.indicator})
               </p>
+              <BudgetBar budget={await errorBudget(oid, slo.target, slo.windowDays)} />
             </div>
           ) : (
             <p className="muted">No SLO set.</p>
@@ -90,11 +94,12 @@ export default async function ServiceDetail({ params }: { params: Promise<{ id: 
           <div className="panel mono">
             {dep.map((d) => (
               <div key={d._id.toHexString()} className="muted">
-                {d.at.toISOString().slice(0, 16)} {d.version} · {d.environment} · {d.status}
+                {d.at.toISOString().slice(0, 16)} {d.version} Â· {d.environment} Â· {d.status}
               </div>
             ))}
             {dep.length === 0 && <span className="muted">None.</span>}
           </div>
+          {user.role !== "viewer" && <DeployForm serviceId={id} />}
         </div>
       </div>
     </>
