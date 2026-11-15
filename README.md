@@ -50,6 +50,7 @@ docs/SECOND-PASS.md           second sweep: new surface, corrections, gaps
 docs/THIRD-PASS.md            profile lifecycle, feed schema, DCR closure, gate scoping
 docs/REPRODUCE.md             exact REA call sequence used to reproduce this
 docs/IMPLEMENTATION-PLAN.md  what to build to turn the spec into a stack
+ops/                          working CloudOps Console built from this blueprint (see ops/README.md)
 LICENSE                       Apache License 2.0
 ```
 
