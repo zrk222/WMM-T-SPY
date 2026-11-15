@@ -17,6 +17,8 @@ const createSchema = z.object({
 
 export const dynamic = "force-dynamic";
 
+const csv = (v: string) => `"${v.replace(/"/g, `"""`).replace(/\n/g, " ")}"`;
+
 export async function GET(req: Request) {
   const g = await gate(req, ["admin", "operator", "viewer"]);
   if (!g.ok) return g.response;
@@ -46,6 +48,16 @@ export async function GET(req: Request) {
 
   const hasMore = rows.length > pageSize;
   const page = rows.slice(0, pageSize);
+
+  if (url.searchParams.get("format") === "csv") {
+    const head = "id,service,title,severity,state,impact,openedAt,resolvedAt";
+    const lines = page.map((i) => [i._id.toHexString(), csv(names.get(i.serviceId.toHexString()) ?? ""), csv(i.title), i.severity, i.state, i.impact, i.openedAt.toISOString(), i.resolvedAt?.toISOString() ?? ""].join(","));
+    return new Response([head, ...lines].join("\n"), {
+      headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": `attachment; filename="incidents.csv"` },
+    });
+  }
+
+
   return json({
     items: page.map((i) => ({
       id: i._id.toHexString(),

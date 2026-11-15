@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { api } from "@/lib/client";
 
-export function SloForm({ serviceId }: { serviceId: string }) {
+export function SloForm({ serviceId, sloId }: { serviceId: string; sloId?: string }) {
   const [target, setTarget] = useState("99.9");
   const [windowDays, setWindowDays] = useState<"7" | "30" | "90">("30");
   const [indicator, setIndicator] = useState<"availability" | "latency">("availability");
@@ -41,7 +41,21 @@ export function SloForm({ serviceId }: { serviceId: string }) {
         </select>
       </div>
       {msg && <p className="muted">{msg}</p>}
-      <button type="submit">Save SLO</button>
+      <div className="row">
+        <button type="submit">Save SLO</button>
+        {sloId && (
+          <button
+            type="button"
+            className="ghost"
+            onClick={async () => {
+              await api(`/api/slos/${sloId}`, { method: "DELETE" });
+              location.reload();
+            }}
+          >
+            Delete SLO
+          </button>
+        )}
+      </div>
     </form>
   );
 }

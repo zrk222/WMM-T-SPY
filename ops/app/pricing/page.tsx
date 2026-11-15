@@ -1,4 +1,4 @@
-import { PLAN_CATALOG } from "@/lib/plans";
+﻿import { PLAN_CATALOG } from "@/lib/plans";
 import Link from "next/link";
 
 export const metadata = { title: "Pricing" };
@@ -11,6 +11,7 @@ export default function Pricing() {
           CloudOps Console
         </Link>
         <span className="spacer" />
+        <Link href="/status">Status</Link>
         <Link href="/login">Sign in</Link>
       </header>
       <main>
@@ -56,7 +57,7 @@ export default function Pricing() {
               <tr key={key}>
                 <td>{label}</td>
                 {PLAN_CATALOG.map((p) => (
-                  <td key={p.id}>{p.limits[key] === -1 ? "∞" : p.limits[key]}</td>
+                  <td key={p.id}>{p.limits[key] === -1 ? "âˆž" : p.limits[key]}</td>
                 ))}
               </tr>
             ))}

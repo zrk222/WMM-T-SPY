@@ -8,6 +8,7 @@ import { SloForm } from "./slo-form";
 import { BudgetBar } from "./budget";
 import { errorBudget } from "@/lib/slo";
 import { DeployForm } from "./deploy-form";
+import { ServiceActions } from "./service-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,9 @@ export default async function ServiceDetail({ params }: { params: Promise<{ id: 
         tier {svc.tier} Â· {svc.owner || "no owner"} Â· {svc.tags.join(", ") || "no tags"}
       </p>
       {svc.description && <p>{svc.description}</p>}
+      {user.role !== "viewer" && (
+        <ServiceActions service={{ id, name: svc.name, owner: svc.owner, description: svc.description, tier: svc.tier }} />
+      )}
 
       <h2>Incidents</h2>
       <table>
@@ -87,7 +91,7 @@ export default async function ServiceDetail({ params }: { params: Promise<{ id: 
           ) : (
             <p className="muted">No SLO set.</p>
           )}
-          {user.role !== "viewer" && <SloForm serviceId={id} />}
+          {user.role !== "viewer" && <SloForm serviceId={id} sloId={slo?._id.toHexString()} />}
         </div>
         <div>
           <h2>Deploys</h2>

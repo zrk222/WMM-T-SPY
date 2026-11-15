@@ -1,9 +1,10 @@
 ﻿import { ObjectId } from "mongodb";
 import { authenticateKey, type KeyAuth } from "@/lib/api-keys";
-import { incidentEvents, incidents, runbooks, services, slos } from "@/lib/collections";
+import { incidentEvents, incidents, runbookRuns, runbooks, services, slos } from "@/lib/collections";
 import { limitsFor, within } from "@/lib/plans";
 import { rateLimit } from "@/lib/rate-limit";
 import { recordAudit } from "@/lib/audit";
+import { errorBudget } from "@/lib/slo";
 
 export const dynamic = "force-dynamic";
 
@@ -135,6 +136,21 @@ async function callTool(name: string, args: Record<string, unknown>, key: KeyAut
       needScope(key, "ops:read");
       const rows = await (await runbooks()).find({ ownerId: key.user._id } as never).limit(limit).toArray();
       return rows.map((r) => ({ id: r._id.toHexString(), name: r.name, steps: r.steps.length }));
+    }
+    case "get_error_budget": {
+      needScope(key, "ops:read");
+      const svcId = String(args.serviceId ?? "");
+      if (!ObjectId.isValid(svcId)) throw new Error("Unknown serviceId");
+      const slo = await (await slos()).findOne({ serviceId: new ObjectId(svcId), ownerId: key.user._id } as never);
+      if (!slo) throw new Error("No SLO for service");
+      return errorBudget(slo.serviceId, slo.target, slo.windowDays);
+    }
+    case "list_runbook_runs": {
+      needScope(key, "ops:read");
+      const rbId = String(args.runbookId ?? "");
+      if (!ObjectId.isValid(rbId)) throw new Error("Unknown runbook");
+      const rows = await (await runbookRuns()).find({ runbookId: new ObjectId(rbId), ownerId: key.user._id } as never).sort({ at: -1 }).limit(20).toArray();
+      return rows.map((r) => ({ status: r.status, note: r.note, at: r.at }));
     }
     case "get_slo": {
       needScope(key, "ops:read");
