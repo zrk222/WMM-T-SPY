@@ -24,7 +24,6 @@ jobs:
       MONGODB_URI: mongodb://127.0.0.1:27017/cloudops_test
       MONGODB_DB: cloudops_test
       JWT_SECRET: ci-secret-ci-secret-ci-secret
-      NODE_ENV: development
       RATE_LIMIT_MULTIPLIER: "40"
     steps:
       - uses: actions/checkout@v4
