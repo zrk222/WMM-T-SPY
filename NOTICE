@@ -1,0 +1,20 @@
+WMM T-SPY
+Copyright 2026 zrk222
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Independent black-box analysis of the public website https://spytok.com,
+captured 2026-11-15. Not affiliated with, endorsed by, or sponsored by SpyTok.
+
+Trademarks, brand assets, post metadata and media referenced here belong to
+their respective owners. Third-party product names (Vercel, PostHog, Stripe,
+Crisp, Google, Simple Analytics, TikTok, Claude, Cursor, VS Code) are used
+nominatively.
+
+Observed facts were produced with REA (https://github.com/morluto/rea). Evidence
+identifiers and digests are listed in docs/EVIDENCE.md; the analysis is a
+snapshot of one deployment (dpl_E5F7n34E42UV5FaByH92KNgcUykd) and may drift as
+the service changes.
+
+Test account credentials in docs/REPRODUCE.md are for a disposable address and
+carry no guarantee of continued existence.
