@@ -30,8 +30,19 @@ export interface ServiceDoc {
   owner: string;
   tier: 1 | 2 | 3;
   tags: string[];
+  dependencies: ObjectId[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface AlertRuleDoc {
+  _id: ObjectId;
+  ownerId: ObjectId;
+  name: string;
+  serviceId: ObjectId | null;
+  severityMin: Severity;
+  enabled: boolean;
+  createdAt: Date;
 }
 
 export interface IncidentDoc {
@@ -142,3 +153,4 @@ export const slos = () => col<SloDoc>("slos");
 export const apiKeys = () => col<ApiKeyDoc>("api_keys");
 export const audit = () => col<AuditDoc>("audit");
 export const runbookRuns = () => col<RunbookRunDoc>("runbook_runs");
+export const alertRules = () => col<AlertRuleDoc>("alert_rules");
