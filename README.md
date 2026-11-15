@@ -23,13 +23,14 @@ was taken from source code, and nothing was modified on the live service.
 | Frontend | Next.js (App Router, Turbopack), React 19.3.0-canary, server components + client islands. |
 | Hosting | Vercel (edge/CDN + Node serverless functions), `server: Vercel`. |
 | Backend | Same-origin Next.js route handlers under `/api/*`; MongoDB-style `ObjectId` identifiers; no third-party BaaS observed. |
-| Auth | First-party email/password + Google Identity Services, HttpOnly session cookie, `tokenVersion` revocation counter, login lockout + attempt tracking. |
-| Billing | Stripe (CSP-declared; `stripeCustomerId`, subscription tier/status/period fields, portal + cancel + switch + invoices endpoints). |
-| Tiers | `basic`, `pro`, `ultra`, `enterprise` (plus `none`); states `active`, `trialing`, `past_due`, `unpaid`. |
+| Auth (web) | HS256 **JWT in an HttpOnly cookie** `token` (7 d, `Secure`, `SameSite=lax`), claims include `role`/tier/`tv`; plus Google Identity Services. Login lockout + attempt tracking; logout revokes immediately. |
+| Auth (agent) | MCP accepts **only** an API key (`Authorization: Bearer`), max 5, shown once; session JWT is rejected. |
+| Billing | Stripe. Public plan catalogue + **anonymous guest checkout** (`cs_live_` sessions). |
+| Tiers | Starter `basic` $49/mo · $299/yr; Growth `pro` $59/mo · $399/yr; Scale `enterprise` $899/mo · $5 990/yr; legacy `ultra` enum unused. States `active`, `trialing`, `past_due`, `unpaid`. |
 | Media | Public S3 bucket `social-gen` (`images/`, `slides/`, `videos/`). |
 | Analytics | PostHog (cloud US), Vercel Analytics + Speed Insights, Crisp chat, Simple Analytics (broken: blocked by CSP). |
 | AI feature | Onboarding profile builder streams structured `product_profile` + `audience_profile` JSON from `/api/onboarding/build-profile/pass-a`; "adaptation briefs" are metered by `aiCredits`. |
-| Agent surface | Hosted **MCP server** at `https://spytok.com/api/mcp` with OAuth authorization server (`/oauth/authorize`) and an API-key/OAuth connection manager. |
+| Agent surface | Hosted **MCP server** `https://spytok.com/api/mcp` with published OAuth AS/resource metadata (`spytok:read`, PKCE S256, DCR), Claude/Cursor/VS Code connectors, and ChatGPT marketing page. |
 
 ---
 
@@ -45,6 +46,7 @@ docs/MCP.md                   SpyTok as an MCP server / OAuth provider
 docs/THIRD-PARTY.md           analytics, billing, chat, media, fonts, CDN
 docs/SECURITY.md              auth model, limits, headers, findings and weaknesses
 docs/EVIDENCE.md              evidence IDs, digests, captured assets, limitations
+docs/SECOND-PASS.md           second sweep: new surface, corrections, gaps
 docs/REPRODUCE.md             exact REA call sequence used to reproduce this
 LICENSE                       Apache License 2.0
 ```
@@ -131,6 +133,16 @@ Authenticated application:
     counters, `attemptsRemaining`, temporary lock with countdown, and
     `tokenVersion` session invalidation are client-visible; there is no CAPTCHA
     or Turnstile anywhere in the client bundle.
+
+### Second pass
+
+A broader second sweep (HTTP semantics, well-known discovery, authenticated
+areas, MCP auth, raw cookie inspection) added five more: the session is a
+**readable JWT** (11), the bot gate is **unreliable and self-tolerated** (12),
+**anonymous guest checkout** mints live Stripe sessions (13), the **plan
+catalogue is public** with real price ids (14), and **sitemap/category pages
+expose 1000 posts** with captions and S3 video URLs (15). Details, corrections
+to pass 1, and remaining gaps: [docs/SECOND-PASS.md](docs/SECOND-PASS.md).
 
 ---
 

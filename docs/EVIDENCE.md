@@ -64,6 +64,24 @@ returned views; their URLs + byte sizes are listed in `ARCHITECTURE.md`.
 - `POST /home` flight response `0:{"a":"$@1","q":"","i":false}`.
 - `/home` HTML document (31,569 B) including the RSC module manifest.
 
+## Second-pass evidence
+
+| # | Operation | Evidence ID / artifact | What it proves |
+| --- | --- | --- | --- |
+| 12 | `capture_browser_scenario` (authenticated API sweep) | `ev_84fc446d…` plus tool-output capture | api-keys 403, api-keys GET, mcp-connections state, feed 400 |
+| 13 | `capture_browser_scenario` (pages: connect/setup/admin/app-profile/niches/manage) | `ev_928ba1cdeda52cd77a8ca9b24d508ea39bb7938e548010bc2f1dee240b16965f` | admin→`/home`, setup→`/connect`, manage→`/pricing`, page titles |
+| 14 | `capture_browser_scenario` (profile key-click attempts ×2) | tool output `tool_1ddd47e7…`, `tool_1ddd5547…`, `tool_1ddd626d…`, `tool_1ddd715f…` | key creation unreachable via a11y/text locators; bot gate confirmed |
+| 15 | `inspect_web_page` (`/pricing` rendered) | `ev_5b54…` sibling capture in `tool_1ddcc8e9…` | paywall cards, $49/$59, guarantee, FAQ copy |
+
+Raw HTTP probes (curl, 06:00–06:20 UTC) were used for method/well-known/header
+facts that need no browser; those are not REA Evidence records and are marked
+"raw probe" in the docs. Key ones: `.well-known/oauth-*` 200 JSON, `/api/mcp`
+401 + `WWW-Authenticate`, `OPTIONS /api/mcp` 204 `Allow`, `GET
+/api/subscription` 200 full catalogue, `POST /api/subscription/guest-checkout`
+200 `cs_live_` URL, `/api/oauth/register` 400 `invalid_client_metadata`,
+`Set-Cookie: token=eyJ…` with full flag set, `POST /api/auth/logout` 200 then
+`/api/auth/me` 401.
+
 ## Redactions and known gaps
 
 - `set-cookie` values are **redacted** by the capture policy; the session cookie
@@ -76,10 +94,14 @@ returned views; their URLs + byte sizes are listed in `ARCHITECTURE.md`.
   id; that re-read is marked as a supplement, not captured Evidence.
 - Screenshots were not captured: the persistent CDP session timed out on
   `Page.enable` (provider_timeout), twice, including a 60 s retry.
-- The hosted MCP endpoint was not protocol-interrogated; `docs/MCP.md` states
-  what is and is not known.
-- Admin surface, Stripe price IDs, and the LLM provider/model remain unknown
-  (not present in shipped client code).
+- The hosted MCP endpoint reached only its auth boundary (`401` + discovery
+  header). `initialize`/`tools/list` never passed auth because key creation was
+  bot-gated; tool names and schemas stay unknown.
+- Screenshots still not captured; `Page.enable` timed out on the persistent CDP
+  session and artifact capture keys were not discoverable, so page text was
+  recovered from captured HTML instead.
+- Admin console, Stripe checkout page itself (redirect target), and the LLM
+  provider/model remain unknown.
 
 ## Provenance notes
 

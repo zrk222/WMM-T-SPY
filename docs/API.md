@@ -46,11 +46,11 @@ Observed via live traffic + literal `fetch()` strings in shipped chunks.
 | --- | --- | --- |
 | GET | `/api/frontend/home` [obs] | `{"formatPreviews":{face_to_camera,screen_recording,animation_motion_graphics,text_centric,slideshow,other,silent_ugc},"industryPreviews":{games,finance,health_fitness,education,entertainment,lifestyle,shopping_e_commerce,business,other_uncategorized}}` — all values are S3 image URLs |
 | GET | `/api/frontend/posts` [obs] | see query string below; returns `{"posts":[…],"nextCursor":"…","totalCount":…}` |
-| GET | `/api/frontend/feed` [str] | |
+| GET | `/api/frontend/feed` [obs] | requires `?profileId=`; missing → `400 {"error":"profileId is required"}` |
 | GET | `/api/frontend/last-update` [str] | |
-| GET | `/api/apps/movers` [str] | |
+| GET | `/api/apps/movers` [str] | App Pulse data |
 | GET | `/api/apps/movers/creators` [str] | |
-| GET | `/api/niches/` [str] | trailing-slash list endpoint |
+| GET | `/api/niches/` [str] | trailing-slash list endpoint (client POSTs `/niches` server action) |
 | GET | `/api/adaptation/credits` [obs] | `{"creditsUsed":0,"creditsLimit":1,"creditsRemaining":1,"month":"2026-11"}` |
 | POST | `/api/adapted-hook` [str] | AI hook adaptation (consumes `aiCredits`) |
 
@@ -120,26 +120,35 @@ Post object shape (all 21 observed fields):
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET/POST | `/api/subscription` [str] | |
-| POST | `/api/subscription/portal` [str] | Stripe billing portal (`/subscription/manage` links here) |
+| GET/POST | `/api/subscription` [obs] | **public GET** returns the full plan catalogue (prices, limits, Stripe price ids — see SECOND-PASS.md). POST creates checkout, body `{subscriptionTier, subscriptionPeriod, successUrl, cancelUrl, paywallVariant?}` |
+| POST | `/api/subscription/portal` [obs] | Stripe billing portal (`/subscription/manage` links here); 401 unauth, 403 on bot gate |
 | POST | `/api/subscription/cancel` [str] | cancel-flow event trail: `cancel_flow_started/…/cancel_now/undo` |
 | POST | `/api/subscription/keep` [str] | cancel-flow "kept" offer |
-| POST | `/api/subscription/switch` [str] | plan switch |
-| GET | `/api/subscription/invoices` [str] | |
-| POST | `/api/subscription/guest-checkout` [str] | pre-signup checkout |
+| GET/POST | `/api/subscription/switch` [str] | GET `?tier=&period=` preview, POST confirm |
+| GET | `/api/subscription/invoices` [obs] | 401 unauth |
+| POST | `/api/subscription/guest-checkout` [obs] | fields required: `subscriptionTier`, `subscriptionPeriod`, `successUrl`, `cancelUrl`; returns `{url:"https://checkout.stripe.com/g/pay/cs_live_…"}` for anonymous users |
+| GET/POST | `/api/oauth/register` [obs-str] | dynamic client registration; GET not allowed on token endpoint (405); rejects standard metadata with `invalid_client_metadata` |
 
 ## MCP / agent surface
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| — | `https://spytok.com/api/mcp` | hosted MCP server (Streamable HTTP) |
-| GET | `/oauth/authorize` | OAuth 2.0 authorization endpoint backing MCP auth |
+| POST/GET/DELETE | `https://spytok.com/api/mcp` | hosted MCP server; `Allow: DELETE, GET, HEAD, OPTIONS, POST`; unauthenticated → `401 {"error":"Missing Bearer token"}` + `Www-Authenticate: Bearer resource_metadata="…/.well-known/oauth-protected-resource/api/mcp", scope="spytok:read"` |
+| GET | `/oauth/authorize` | OAuth 2.0 authorization endpoint (307 → onboarding when signed out) |
+| POST | `/api/oauth/token` | token endpoint (authorization_code + refresh_token, public clients) |
+| POST | `/api/oauth/register` | dynamic client registration |
+| GET | `/.well-known/oauth-authorization-server` | AS metadata (public) |
+| GET | `/.well-known/oauth-protected-resource` | resource metadata (public) |
+
+Authentication for MCP is an **API key only**: a session JWT sent as `Bearer`
+yields `401 {"error":"Invalid API key"}`; the cookie alone yields `Missing Bearer
+token`. Max 5 keys per account, shown once.
 
 ## Misc
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/api/og?title=…&subtitle=…` | dynamic OpenGraph image generator (1200×630) |
+| GET | `/api/og?title=…&subtitle=…` | dynamic OpenGraph image generator (1200×630, public, `image/png`) |
 | GET | `/api/early_access_features/?token=…`, `/api/product_tours/?token=…`, `/api/surveys/?token=…`, `/api/web_experiments/?token=…` | PostHog companion endpoints |
 
 ## Rate limits / quotas visible to the client
@@ -150,3 +159,9 @@ Post object shape (all 21 observed fields):
   `scrollResults` (soft), `filteringEnabled` (hard), `appProfilesCount` (hard),
   `upgrade` (manual), `searchLimit` (manual), `signup` (manual).
 - Login lockout: `locked`, `remainingTime`, `attemptsRemaining`.
+- API keys: max 5 per account (`5 keys max. disconnect one first.`).
+- Bot gate: `403 {"error":"Automated access detected."}` on selected routes
+  (`POST /api/user/api-keys`, `POST /api/subscription/portal`, cookie-less
+  `GET`/`HEAD /api/frontend/posts`); the client explicitly tolerates 403 on key
+  creation and refreshes anyway.
+- Unknown `/api/*` paths return the **HTML** 404 page, not JSON.

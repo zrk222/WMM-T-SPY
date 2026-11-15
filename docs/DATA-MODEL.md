@@ -143,6 +143,49 @@ testimonials, storytime, before-after, meme, listicle` (SEO routes) and
 slideshow, other, silent_ugc` (visual-tag enum in `/api/frontend/home` and
 `?visualTags=overall_visual_style:…`).
 
+## Plan (public catalogue, from `GET /api/subscription`)
+
+```jsonc
+{
+  "_id": "67d69f98363d716b8898c28f",
+  "name": "Starter", "tier": "basic",
+  "description": "Detect and analyze viral posts for your niche.",
+  "features": [{"key":"aiSearch","label":"AI-powered contextual search"}, …],
+  "monthlyPrice": 49, "yearlyPrice": 299,
+  "stripePriceIdMonthly": "price_1R3hb0LPvSXwfzMEONXuda05",
+  "stripePriceIdYearly": "price_1R3haSLPvSXwfzMEIhLrtG2w",
+  "limits": {"scrollResults":50,"collectionsCount":3,"postsPerCollection":30,
+             "filteringEnabled":true,"searchQuota":50,"recurringSearches":0,
+             "aiCredits":10,"appProfilesCount":1},
+  "isActive": true, "displayOrder": 1,
+  "createdAt": "…", "updatedAt": "…", "__v": 0
+}
+```
+
+Rows exist for `basic` (Starter, 49/299), `pro` (Growth, 59/399) and
+`enterprise` (Scale, 899/5990). `ultra` appears in the tier set but has no row.
+Enterprise Stripe ids are placeholders (`price_enterprise_*_default`).
+
+## MCP connection state
+
+```
+access            "free" | (paid levels)
+arm, tool         connector arm/tool identity
+connected         boolean
+clickedAt, allowViewedAt, deniedAt, claudeAllowViewedAt, dismissedAt
+lastAnswer, firstAnswerAt
+inProgress
+serverNow         server clock (client skew correction)
+connections[]     [{ id, client_name, … }]
+keys[]            [{ id, name, lastUsedAt }]
+```
+
+## Session claims (JWT payload)
+
+```
+id, email, name, role, verified, subscriptionTier, subscriptionStatus, tv, iat, exp
+```
+
 ## Collections, briefs, searches, alerts
 
 Only client-visible identifiers were recoverable:

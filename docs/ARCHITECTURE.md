@@ -120,8 +120,34 @@ Public chunks are content-hashed but human-readable in shape:
 
 No source maps are published (`source_map_url: null` everywhere).
 
-## Request flow for the signed-in feed
+## App shell, navigation and route guards
 
+Authenticated shell nav: `Today` (`/home`), `Explore` (`/explore`), `App Pulse`
+(`/apps`); profile menu exposes AI tools (MCP keys/connections) and
+`/subscription/manage`.
+
+Server-side route guards are redirects, not 403s:
+
+```
+/admin            → /          (anonymous)  |  /home  (non-admin)  |  admin console (role admin)
+/explore          → /onboarding?next=%2Fexplore
+/oauth/authorize  → /onboarding?next=%2Foauth%2Fauthorize
+/connect,*        → /login?next=…           | /connect/setup → /connect without a profile
+/niches, /profile, /app-profile, /feed, /subscription/* → /login?next=…
+/subscription/manage → /pricing when unsubscribed
+```
+
+404 is a branded page (`Page not found`, `Back to SpyTok`, `meta robots noindex`).
+Unknown `/api/*` paths fall through to the same HTML 404 rather than JSON.
+
+SEO surfaces: `robots.txt` allows `/top-posts*`, `/api/og` and disallows `/api/`,
+`/profile`, `/niches`; it advertises `sitemap.xml` (114 URLs) and
+`sitemap-videos.xml` (1000 post entries with S3 media URLs, durations, dates and
+view counts). Category pages are prerendered in full — `/top-posts/lifestyle` is
+336,694 bytes and renders 16,088-post statistics, pattern mix, hooks, captions,
+transcripts and per-post metrics.
+
+## Request flow for the signed-in feed
 ```
 GET /home                       → HTML (RSC payload, 31.6 KB)
 GET /api/auth/me                → { user } or 401 {user:null,authenticated:false}

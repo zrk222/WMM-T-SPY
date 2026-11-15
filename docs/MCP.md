@@ -4,15 +4,44 @@ SpyTok ships a first-party **Model Context Protocol** server so external agents
 (Claude, Cursor, VS Code, anything MCP-capable) can query its viral-post data.
 This is a product surface, not an internal tool — the app markets it in-product.
 
-## Endpoint
+## Endpoint and discovery
 
 ```
-MCP transport : https://spytok.com/api/mcp   (HTTP transport, inferred; not handshaken)
-Connector UI  : /connect  and  /connect/setup
-OAuth         : /oauth/authorize   (authorization endpoint backing MCP auth)
+MCP transport : https://spytok.com/api/mcp   (HTTP; Allow: DELETE, GET, HEAD, OPTIONS, POST)
+Connector UI  : /connect  and  /connect/setup   (setup requires an app profile)
+OAuth AS      : /.well-known/oauth-authorization-server
+OAuth resource: /.well-known/oauth-protected-resource  (+ /api/mcp suffix form)
+Authorize     : /oauth/authorize → onboarding when signed out
+Token         : POST /api/oauth/token          (authorization_code, refresh_token)
+Registration  : POST /api/oauth/register       (dynamic client registration)
+Scopes        : spytok:read (single)
+PKCE          : S256 only; token auth method "none" (public clients)
 ```
 
-Client-side constant (verbatim from `2fmn7mbdmkcxy.js`/feed chunks):
+Unauthenticated `POST /api/mcp` responds:
+
+```
+401 {"error":"Missing Bearer token"}
+Www-Authenticate: Bearer resource_metadata="https://spytok.com/.well-known/oauth-protected-resource/api/mcp", scope="spytok:read"
+```
+
+## Authentication: API key only
+
+MCP does **not** accept the web session. Sending the session JWT as `Bearer`
+returns `401 {"error":"Invalid API key"}`; sending the cookie alone returns
+`401 {"error":"Missing Bearer token"}`. A dedicated key is required:
+
+```
+Authorization: Bearer YOUR_KEY
+```
+
+Key rules: created in the profile "AI tools" panel, **max 5 per account**
+(`5 keys max. disconnect one first.`), displayed once
+(`shows once, copy it now`), described as `for tools without sign in`, and
+revocable. Creation is `POST /api/user/api-keys {name}` and is one of the routes
+that trips the bot gate (see SECURITY.md #12).
+
+Client-side constant (verbatim from the connect chunk):
 
 ```js
 let t = "https://spytok.com/api/mcp";
@@ -21,16 +50,21 @@ const n = "/connect",
       o = "/connect/setup",
       i = (e) => (e ? `${o}#${e}` : o),
       s = "https://claude.ai/customize/connectors",
-      u = `${s}?modal=add-custom-connector&connectorName=...`;
+      u = `${s}?modal=add-custom-connector&connectorName=SpyTok&connectorUrl=${encodeURIComponent(t)}`;
+const keyHeader = "Authorization: Bearer YOUR_KEY";
 ```
 
-Third-party deep links observed:
+Shipped install commands and deep links:
 
 ```
-https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=…
+claude mcp add --transport http --scope user spytok https://spytok.com/api/mcp
+https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=SpyTok&connectorUrl=…
 https://cursor.com/en-US/install-mcp
 https://vscode.dev/redirect/mcp/install
 ```
+
+Marketing page `/mcp` is titled "SpyTok for Claude and ChatGPT | Viral content
+strategist in your AI chat", so ChatGPT is a first-class target as well.
 
 ## Connection model
 
@@ -60,6 +94,21 @@ Copy/strings: `ask link read failed`, `ask link verdict unknown`,
 object on `/api/app-profile` used to nudge users toward MCP when they add
 another app.
 
+## Connection state model
+
+`GET /api/user/mcp-connections` (200) returns the nudge state machine:
+
+```json
+{"access":"free","arm":null,"connected":false,"clickedAt":null,"tool":null,
+ "allowViewedAt":null,"deniedAt":null,"claudeAllowViewedAt":null,
+ "dismissedAt":null,"connections":[],"keys":[],"lastAnswer":null,
+ "firstAnswerAt":null,"inProgress":false,"serverNow":"…"}
+```
+
+`access` gates the feature, `arm`/`tool` describe the connector, and the
+timestamp columns drive the in-product prompts. Entitlement copy is explicit:
+"SpyTok in Claude comes with Starter and Growth."
+
 ## Why it matters
 
 The MCP server is the same data plane as the web app (posts, outliers, formats,
@@ -67,6 +116,8 @@ industries), exposed to agents. Because it is served from the same Next.js app
 and OAuth issuer, the "agent API" inherits the web session model, tier limits
 and revocation semantics (`tokenVersion`, per-connection revoke).
 
-> Scope note: the MCP endpoint itself was **not** protocol-interrogated here. The
-> claims above are from shipped client code, route names and in-product copy.
-> Tool names/JSON schemas are therefore explicitly **unknown** in this analysis.
+> Scope note: `tools/list` and tool schemas are **unknown** — key creation was
+> blocked by the bot gate on every attempt. The claims above come from the
+> published OAuth documents, live 401 contracts, shipped client code, route names
+> and in-product copy. Transport was exercised only to `initialize` (which never
+> ran because auth failed first).

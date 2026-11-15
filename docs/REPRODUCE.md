@@ -102,6 +102,43 @@ rea capture_browser_scenario(
                    max_network_transactions:2048}})
 ```
 
+## 7. Second pass (HTTP + auth boundary)
+
+Raw HTTP probes, no browser:
+
+```bash
+curl -s https://spytok.com/.well-known/oauth-authorization-server
+curl -s https://spytok.com/.well-known/oauth-protected-resource
+curl -si -X POST https://spytok.com/api/mcp -H 'content-type: application/json' \
+  -H 'accept: application/json, text/event-stream' \
+  --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{...}}'
+curl -s https://spytok.com/api/subscription
+curl -s -X POST https://spytok.com/api/subscription/guest-checkout \
+  -H 'content-type: application/json' \
+  --data '{"subscriptionTier":"basic","subscriptionPeriod":"monthly","successUrl":"…","cancelUrl":"…"}'
+curl -s https://spytok.com/robots.txt
+curl -s https://spytok.com/sitemap.xml | grep -c '<loc>'
+curl -s https://spytok.com/sitemap-videos.xml | grep -c '<loc>'
+```
+
+Session cookie and JWT inspection:
+
+```bash
+curl -si -c jar -X POST https://spytok.com/api/auth/login \
+  -H 'content-type: application/json' --data '{"email":"…","password":"…"}'
+# read "Set-Cookie: token=eyJ…" flags, decode the middle base64url segment
+curl -s -b jar https://spytok.com/api/frontend/posts?pageSize=2   # 200
+curl -s -b jar -X POST https://spytok.com/api/user/api-keys \
+  -H 'content-type: application/json' --data '{"name":"rea"}'      # 403 gate
+curl -s -X POST https://spytok.com/api/mcp \
+  -H "authorization: Bearer <jwt>" …                               # 401 Invalid API key
+curl -s -b jar -X POST https://spytok.com/api/auth/logout          # 200 success
+```
+
+Browser sweep of the authenticated shell (same scenario contract as §5):
+`goto` `/connect`, `/connect/setup`, `/admin`, `/app-profile`, `/niches`,
+`/subscription/manage`, with `wait_for_timeout` between and 30 s `timeout_ms`.
+
 ## Contract lessons (hard-won)
 
 - Every action needs `step_id`; timed steps need `duration_ms`.
